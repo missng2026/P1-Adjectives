@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P1 English Adjective Monster Game</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for Playful P1 Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Fredoka', cursive, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* Keep standard 16:9 aspect ratio container or fluid desktop screen */
+    .aspect-16-9 {
+      aspect-ratio: 16 / 9;
+    }
+
+    /* Bounce and wiggle animations */
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-3deg) scale(1); }
+      50% { transform: rotate(3deg) scale(1.05); }
+    }
+
+    @keyframes celebrate {
+      0% { transform: translateY(0) scale(1); }
+      30% { transform: translateY(-20px) scale(1.1) rotate(5deg); }
+      60% { transform: translateY(0) scale(0.95) rotate(-5deg); }
+      100% { transform: translateY(0) scale(1) rotate(0); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+
+    .animate-wiggle {
+      animation: wiggle 3s ease-in-out infinite;
+    }
+
+    .animate-celebrate {
+      animation: celebrate 0.8s ease-in-out;
+    }
+
+    .animate-shake {
+      animation: shake 0.5s ease-in-out;
+    }
+
+    /* Custom drop targets animation */
+    .blank-target {
+      transition: all 0.2s ease;
+    }
+
+    .blank-target.active {
+      border-color: #3B82F6;
+      background-color: #EFF6FF;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 flex items-center justify-center min-h-screen p-2 md:p-4 overflow-hidden">
+
+  <!-- Main Game Container (Optimized for 16:9 Electronic Whiteboard) -->
+  <div id="game-container" class="relative w-full max-w-[1400px] aspect-16-9 bg-gradient-to-b from-sky-200 via-indigo-100 to-purple-200 rounded-3xl shadow-2xl border-8 border-white/80 overflow-hidden flex flex-col justify-between p-4 md:p-6">
+    
+    <!-- TOP BAR: Header, Progress Stars, & Teacher Controls -->
+    <header class="flex items-center justify-between bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-md border-2 border-indigo-100">
+      <!-- Title & Level Indicator -->
+      <div class="flex items-center gap-3">
+        <span class="text-3xl md:text-4xl">👾</span>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold text-indigo-900 leading-tight">Monster Adjectives</h1>
+          <p class="text-xs md:text-sm text-indigo-600 font-semibold">Primary 1 Revision Game</p>
+        </div>
+      </div>
+
+      <!-- Star Counter Progress -->
+      <div class="flex items-center gap-2 bg-amber-100 px-4 py-2 rounded-full border-2 border-amber-300">
+        <span class="text-2xl">⭐</span>
+        <span id="star-count" class="text-xl md:text-2xl font-bold text-amber-700">0 / 5</span>
+      </div>
+
+      <!-- Control Buttons -->
+      <div class="flex items-center gap-2">
+        <button id="btn-read-aloud" onclick="readCurrentSentence()" class="p-3 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold rounded-xl shadow-md flex items-center gap-1 text-sm md:text-base transition-all" title="Read Sentence">
+          🔊 <span class="hidden md:inline">Listen</span>
+        </button>
+        <button id="btn-reset" onclick="resetGame()" class="p-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl shadow-md text-sm md:text-base transition-all" title="Restart Game">
+          🔄 <span class="hidden md:inline">Restart</span>
+        </button>
+        <button id="btn-fullscreen" onclick="toggleFullscreen()" class="p-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow-md text-sm md:text-base transition-all">
+          ⛶
+        </button>
+      </div>
+    </header>
+
+    <!-- MIDDLE MAIN AREA: Left Monster Display | Right Interactive Work Area -->
+    <main class="grid grid-cols-12 gap-4 my-2 flex-1 items-center">
+      
+      <!-- LEFT HAND SIDE: Monster SVG Stage (5 cols) -->
+      <section class="col-span-5 h-full bg-white/60 backdrop-blur-sm rounded-2xl border-4 border-white shadow-inner flex flex-col items-center justify-center relative p-4 overflow-hidden">
+        <div id="monster-stage" class="w-full h-full flex items-center justify-center animate-wiggle">
+          <!-- Dynamic Monster SVG inserted via JS -->
+        </div>
+        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-indigo-900/10 px-3 py-1 rounded-full text-xs font-bold text-indigo-800">
+          Monster <span id="monster-num">1</span>
+        </div>
+      </section>
+
+      <!-- RIGHT HAND SIDE: Description Reading Card & Word Options (7 cols) -->
+      <section class="col-span-7 h-full flex flex-col justify-between gap-3">
+        
+        <!-- Large Interactive Reading Card -->
+        <div class="bg-white/90 backdrop-blur-md p-5 rounded-2xl shadow-lg border-2 border-indigo-100 flex-1 flex flex-col justify-center">
+          <p class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-1">Fill in the missing words:</p>
+          <div id="sentence-container" class="text-2xl lg:text-3xl font-bold leading-relaxed text-slate-800 flex flex-wrap items-center gap-2 md:gap-3">
+            <!-- Sentence parts and blank buttons inserted dynamically -->
+          </div>
+        </div>
+
+        <!-- Word Bank / Choice Options Grid -->
+        <div class="bg-indigo-950/10 p-3 rounded-2xl border-2 border-white/60">
+          <p class="text-xs font-bold text-indigo-900 uppercase tracking-wide mb-2 text-center">Tap the matching word:</p>
+          <div id="word-bank" class="grid grid-cols-4 gap-2 md:gap-3">
+            <!-- Word target buttons dynamically rendered -->
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- BOTTOM BAR: Feedback Message & Next Button -->
+    <footer class="flex items-center justify-between bg-white/90 backdrop-blur-md px-6 py-2 rounded-2xl shadow-md border-2 border-indigo-100 h-16">
+      <div id="feedback-message" class="text-lg md:text-2xl font-bold text-indigo-900 flex items-center gap-2">
+        👉 Tap a blank space, then choose an adjective!
+      </div>
+      
+      <button id="btn-next" onclick="nextRound()" class="hidden px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-xl rounded-xl shadow-lg transform active:scale-95 transition-all flex items-center gap-2 animate-bounce">
+        <span>Next Monster</span> ➔
+      </button>
+    </footer>
+
+  </div>
+
+  <!-- End Game Celebration Modal -->
+  <div id="victory-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl border-4 border-amber-300 animate-celebrate">
+      <div class="text-6xl mb-3">🎉🏆🎉</div>
+      <h2 class="text-3xl font-extrabold text-indigo-900 mb-2">Great Job, Primary 1!</h2>
+      <p class="text-lg text-slate-600 mb-6">You described all the monsters correctly!</p>
+      <div class="text-5xl font-black text-amber-500 mb-6 flex items-center justify-center gap-2">
+        <span>⭐⭐⭐⭐⭐</span>
+      </div>
+      <button onclick="resetGame()" class="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-extrabold text-xl rounded-2xl shadow-xl hover:opacity-95 active:scale-95 transition-all">
+        Play Again 🔄
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    /* ===================================================================
+       1. TARGET VOCABULARY & MONSTER DATA SETS
+       =================================================================== */
+    const VOCAB_BANK = [
+      { id: 'big', label: 'big', emoji: '🐘' },
+      { id: 'small', label: 'small', emoji: '🐜' },
+      { id: 'tall', label: 'tall', emoji: '🦒' },
+      { id: 'short', label: 'short', emoji: '🐕' },
+      { id: 'fat', label: 'fat', emoji: '🦛' },
+      { id: 'thin', label: 'thin', emoji: '🪱' },
+      { id: 'long', label: 'long', emoji: '🐍' }
+    ];
+
+    // Rounds designed to revise: big, small, tall, short, fat, thin, long
+    const MONSTER_ROUNDS = [
+      {
+        id: 1,
+        sentenceParts: ["Look at this monster! It has a", "body and", "legs."],
+        blanks: [
+          { target: "fat", selected: null },
+          { target: "short", selected: null }
+        ],
+        svgBuilder: () => `
+          <svg viewBox="0 0 200 220" class="w-full h-full max-h-[280px]">
+            <!-- Fat Body -->
+            <ellipse cx="100" cy="120" rx="75" ry="60" fill="#EC4899" stroke="#BE185D" stroke-width="6"/>
+            <!-- Short Legs -->
+            <rect x="65" y="175" width="20" height="25" rx="10" fill="#BE185D"/>
+            <rect x="115" y="175" width="20" height="25" rx="10" fill="#BE185D"/>
+            <!-- Cute Big Eyes -->
+            <circle cx="75" cy="100" r="16" fill="white"/>
+            <circle cx="75" cy="100" r="8" fill="#1E1B4B"/>
+            <circle cx="125" cy="100" r="16" fill="white"/>
+            <circle cx="125" cy="100" r="8" fill="#1E1B4B"/>
+            <!-- Smile -->
+            <path d="M 80 135 Q 100 155 120 135" stroke="#1E1B4B" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <!-- Horns -->
+            <polygon points="60,65 75,35 85,62" fill="#F59E0B"/>
+            <polygon points="140,65 125,35 115,62" fill="#F59E0B"/>
+          </svg>`
+      },
+      {
+        id: 2,
+        sentenceParts: ["This monster is very", "! It has", "arms."],
+        blanks: [
+          { target: "tall", selected: null },
+          { target: "long", selected: null }
+        ],
+        svgBuilder: () => `
+          <svg viewBox="0 0 200 240" class="w-full h-full max-h-[290px]">
+            <!-- Tall Body -->
+            <rect x="75" y="40" width="50" height="150" rx="25" fill="#10B981" stroke="#047857" stroke-width="6"/>
+            <!-- Long Arms -->
+            <path d="M 75 80 Q 20 100 15 150" fill="none" stroke="#047857" stroke-width="10" stroke-linecap="round"/>
+            <path d="M 125 80 Q 180 100 185 150" fill="none" stroke="#047857" stroke-width="10" stroke-linecap="round"/>
+            <!-- Legs -->
+            <rect x="80" y="185" width="14" height="40" fill="#047857"/>
+            <rect x="106" y="185" width="14" height="40" fill="#047857"/>
+            <!-- One Big Eye -->
+            <circle cx="100" cy="75" r="20" fill="white"/>
+            <circle cx="100" cy="75" r="9" fill="#18181B"/>
+            <!-- Happy Mouth -->
+            <path d="M 90 110 Q 100 120 110 110" stroke="#18181B" stroke-width="4" fill="none"/>
+          </svg>`
+      },
+      {
+        id: 3,
+        sentenceParts: ["Look! It has a", "head and", "eyes."],
+        blanks: [
+          { target: "big", selected: null },
+          { target: "small", selected: null }
+        ],
+        svgBuilder: () => `
+          <svg viewBox="0 0 200 220" class="w-full h-full max-h-[280px]">
+            <!-- Giant Head -->
+            <circle cx="100" cy="95" r="75" fill="#8B5CF6" stroke="#6D28D9" stroke-width="6"/>
+            <!-- Small Body -->
+            <rect x="85" y="165" width="30" height="35" rx="10" fill="#6D28D9"/>
+            <!-- Tiny Eyes -->
+            <circle cx="80" cy="85" r="5" fill="white"/>
+            <circle cx="80" cy="85" r="2.5" fill="black"/>
+            <circle cx="120" cy="85" r="5" fill="white"/>
+            <circle cx="120" cy="85" r="2.5" fill="black"/>
+            <!-- Mouth with Tooth -->
+            <path d="M 75 120 Q 100 140 125 120" stroke="#1E1B4B" stroke-width="5" fill="none"/>
+            <polygon points="95,123 105,123 100,133" fill="white"/>
+          </svg>`
+      },
+      {
+        id: 4,
+        sentenceParts: ["It is a", "monster with a", "tail."],
+        blanks: [
+          { target: "thin", selected: null },
+          { target: "long", selected: null }
+        ],
+        svgBuilder: () => `
+          <svg viewBox="0 0 220 220" class="w-full h-full max-h-[280px]">
+            <!-- Thin Body -->
+            <rect x="95" y="50" width="22" height="120" rx="11" fill="#F59E0B" stroke="#D97706" stroke-width="5"/>
+            <!-- Long Wavy Tail -->
+            <path d="M 110 160 Q 170 170 150 200 T 200 210" fill="none" stroke="#D97706" stroke-width="8" stroke-linecap="round"/>
+            <!-- Thin Legs -->
+            <line x1="98" y1="170" x2="85" y2="205" stroke="#D97706" stroke-width="6" stroke-linecap="round"/>
+            <line x1="112" y1="170" x2="125" y2="205" stroke="#D97706" stroke-width="6" stroke-linecap="round"/>
+            <!-- Eyes -->
+            <circle cx="106" cy="70" r="12" fill="white"/>
+            <circle cx="106" cy="70" r="6" fill="#1E1B4B"/>
+            <!-- Smile -->
+            <path d="M 100 95 Q 106 105 112 95" stroke="#1E1B4B" stroke-width="3" fill="none"/>
+          </svg>`
+      },
+      {
+        id: 5,
+        sentenceParts: ["This monster is", "and has a", "mouth."],
+        blanks: [
+          { target: "short", selected: null },
+          { target: "big", selected: null }
+        ],
+        svgBuilder: () => `
+          <svg viewBox="0 0 200 200" class="w-full h-full max-h-[280px]">
+            <!-- Short Round Body -->
+            <ellipse cx="100" cy="130" rx="65" ry="40" fill="#06B6D4" stroke="#0891B2" stroke-width="6"/>
+            <!-- Feet -->
+            <ellipse cx="70" cy="170" rx="18" ry="10" fill="#0891B2"/>
+            <ellipse cx="130" cy="170" rx="18" ry="10" fill="#0891B2"/>
+            <!-- Eyes -->
+            <circle cx="80" cy="115" r="10" fill="white"/>
+            <circle cx="80" cy="115" r="5" fill="black"/>
+            <circle cx="120" cy="115" r="10" fill="white"/>
+            <circle cx="120" cy="115" r="5" fill="black"/>
+            <!-- Giant Big Mouth -->
+            <ellipse cx="100" cy="142" rx="35" ry="18" fill="#991B1B"/>
+            <path d="M 68 140 Q 100 165 132 140 Z" fill="#DC2626"/>
+          </svg>`
+      }
+    ];
+
+    /* ===================================================================
+       2. GAME STATE MANAGEMENT
+       =================================================================== */
+    let currentRoundIndex = 0;
+    let activeBlankIndex = 0; // Which blank option target is currently active
+    let score = 0;
+
+    /* ===================================================================
+       3. AUDIO SYNTHESIZER & SPEECH (Web Audio API)
+       =================================================================== */
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        // Happy ascending chord chime
+        const now = audioCtx.currentTime;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+        osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+        
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        
+        osc.start(now);
+        osc.stop(now + 0.6);
+      } else if (type === 'wrong') {
+        // Gentle wrong buzz
+        const now = audioCtx.currentTime;
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.setValueAtTime(140, now + 0.15);
+        
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        
+        osc.start(now);
+        osc.stop(now + 0.4);
+      } else if (type === 'select') {
+        // Pop sound
+        const now = audioCtx.currentTime;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+        
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+    }
+
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // Stop ongoing speech
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.85; // Slightly slower for P1 ESL students
+        utterance.pitch = 1.1;
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    /* ===================================================================
+       4. GAME RENDER FUNCTIONS
+       =================================================================== */
+    function initGame() {
+      currentRoundIndex = 0;
+      score = 0;
+      document.getElementById('victory-modal').classList.add('hidden');
+      loadRound(currentRoundIndex);
+    }
+
+    function loadRound(index) {
+      const round = MONSTER_ROUNDS[index];
+      activeBlankIndex = 0;
+
+      // Reset selection state
+      round.blanks.forEach(b => b.selected = null);
+
+      // UI updates
+      document.getElementById('monster-num').innerText = index + 1;
+      document.getElementById('star-count').innerText = `${score} / ${MONSTER_ROUNDS.length}`;
+      document.getElementById('btn-next').classList.add('hidden');
+      document.getElementById('feedback-message').innerHTML = `👉 Tap a blank, then select the right adjective!`;
+      document.getElementById('feedback-message').className = "text-lg md:text-2xl font-bold text-indigo-900 flex items-center gap-2";
+
+      // Render Monster SVG
+      const monsterStage = document.getElementById('monster-stage');
+      monsterStage.innerHTML = round.svgBuilder();
+      monsterStage.className = "w-full h-full flex items-center justify-center animate-wiggle";
+
+      // Render Sentence with Blanks
+      renderSentence();
+
+      // Render Word Choice Buttons
+      renderWordBank();
+    }
+
+    function renderSentence() {
+      const round = MONSTER_ROUNDS[currentRoundIndex];
+      const container = document.getElementById('sentence-container');
+      container.innerHTML = '';
+
+      round.sentenceParts.forEach((textPart, idx) => {
+        // Append text part
+        const span = document.createElement('span');
+        span.innerText = textPart;
+        container.appendChild(span);
+
+        // Append blank if available
+        if (idx < round.blanks.length) {
+          const blankData = round.blanks[idx];
+          const blankBtn = document.createElement('button');
+          blankBtn.className = `blank-target px-4 py-2 rounded-xl border-4 font-extrabold text-2xl md:text-3xl min-w-[120px] text-center shadow-inner ${
+            activeBlankIndex === idx ? 'active border-blue-500 bg-blue-50 text-blue-700' : 'border-dashed border-indigo-300 bg-indigo-50/50 text-indigo-800'
+          }`;
+
+          if (blankData.selected) {
+            blankBtn.innerText = blankData.selected;
+            blankBtn.classList.remove('border-dashed');
+            blankBtn.classList.add('border-solid', 'border-emerald-500', 'bg-emerald-100', 'text-emerald-800');
+          } else {
+            blankBtn.innerText = `____`;
+          }
+
+          blankBtn.onclick = () => {
+            playSound('select');
+            activeBlankIndex = idx;
+            renderSentence();
+          };
+
+          container.appendChild(blankBtn);
+        }
+      });
+    }
+
+    function renderWordBank() {
+      const wordBank = document.getElementById('word-bank');
+      wordBank.innerHTML = '';
+
+      VOCAB_BANK.forEach(vocab => {
+        const btn = document.createElement('button');
+        btn.className = "flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 p-3 md:p-4 bg-white hover:bg-amber-50 border-3 border-indigo-200 active:scale-95 rounded-2xl shadow-md transition-all text-indigo-950 font-extrabold text-xl md:text-2xl hover:border-amber-400";
+        btn.innerHTML = `<span>${vocab.emoji}</span> <span>${vocab.label}</span>`;
+        
+        btn.onclick = () => handleWordSelection(vocab.label);
+        wordBank.appendChild(btn);
+      });
+    }
+
+    /* ===================================================================
+       5. INTERACTION LOGIC & VERIFICATION
+       =================================================================== */
+    function handleWordSelection(word) {
+      const round = MONSTER_ROUNDS[currentRoundIndex];
+      const currentBlank = round.blanks[activeBlankIndex];
+
+      // Read selected word aloud
+      speakText(word);
+
+      if (word === currentBlank.target) {
+        // Correct Answer
+        playSound('correct');
+        currentBlank.selected = word;
+
+        // Animate Monster
+        const stage = document.getElementById('monster-stage');
+        stage.classList.remove('animate-wiggle');
+        void stage.offsetWidth; // Trigger reflow
+        stage.classList.add('animate-celebrate');
+
+        // Check if round complete
+        const allCorrect = round.blanks.every(b => b.selected === b.target);
+        
+        if (allCorrect) {
+          score++;
+          document.getElementById('star-count').innerText = `${score} / ${MONSTER_ROUNDS.length}`;
+          document.getElementById('feedback-message').innerHTML = `🎉 Great job! The description is complete!`;
+          document.getElementById('feedback-message').className = "text-lg md:text-2xl font-bold text-emerald-600 animate-bounce";
+          document.getElementById('btn-next').classList.remove('hidden');
+          
+          // Read full sentence after brief delay
+          setTimeout(readCurrentSentence, 600);
+        } else {
+          // Move automatically to the next empty blank
+          activeBlankIndex = round.blanks.findIndex(b => b.selected === null);
+          document.getElementById('feedback-message').innerHTML = `🌟 Correct! Now fill in the next blank!`;
+        }
+
+        renderSentence();
+
+      } else {
+        // Incorrect Answer
+        playSound('wrong');
+        const stage = document.getElementById('monster-stage');
+        stage.classList.remove('animate-wiggle');
+        void stage.offsetWidth;
+        stage.classList.add('animate-shake');
+
+        document.getElementById('feedback-message').innerHTML = `❌ Try again! Look closely at the monster.`;
+        document.getElementById('feedback-message').className = "text-lg md:text-2xl font-bold text-rose-600";
+      }
+    }
+
+    function readCurrentSentence() {
+      const round = MONSTER_ROUNDS[currentRoundIndex];
+      let fullText = "";
+      
+      round.sentenceParts.forEach((part, idx) => {
+        fullText += part + " ";
+        if (idx < round.blanks.length) {
+          fullText += (round.blanks[idx].selected || "something") + " ";
+        }
+      });
+
+      speakText(fullText);
+    }
+
+    function nextRound() {
+      playSound('select');
+      if (currentRoundIndex < MONSTER_ROUNDS.length - 1) {
+        currentRoundIndex++;
+        loadRound(currentRoundIndex);
+      } else {
+        // Victory!
+        playSound('correct');
+        document.getElementById('victory-modal').classList.remove('hidden');
+      }
+    }
+
+    function resetGame() {
+      playSound('select');
+      initGame();
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Initialize game on window load
+    window.onload = () => {
+      initGame();
+    };
+  </script>
+</body>
+</html>
